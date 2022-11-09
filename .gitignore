@@ -1,0 +1,39 @@
+# Prerequisites
+*.d
+
+# Compiled object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.pch
+*.gch
+
+# Compiled Dynamic Libraries
+*.dll
+*.so
+*.dylib
+
+# Compiled Static Libraries
+*.lai
+*.la
+*.a
+*.lib
+
+#Executables
+*.exe
+*.out
+*.app
+
+# Visual Studio Generated Files
+/.vs/
+
+# Build files
+/Build/
+
+# Profiling / Log Files
+*.log
+*.docx
+*.csv
