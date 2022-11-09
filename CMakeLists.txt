@@ -34,3 +34,18 @@ include_directories(Engine/inc)
 include_directories(Game/)
 add_executable(${PROJECT_NAME} ${GAME_CPP_FILES} ${GAME_HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} CatalystEngine)
+
+
+#Build Docs
+find_package(Doxygen QUIET)
+if(DOXYGEN_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/Docs/Catalyst")
+	#Build Documentation optionally
+	option(BUILD_DOCS "Build Catalyst Documentation" ON)
+	if(BUILD_DOCS)
+		message(STATUS "Building Documentation")
+		execute_process(COMMAND ${DOXYGEN_EXECUTABLE} Catalyst WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Docs/" RESULT_VARIABLE DOXY_RESULT)
+		if(NOT DOXY_RESULT EQUAL "0")
+			message(FATAL_ERROR"command [Doxygen Catalayst] failed with status ${DOXY_RESULT}")
+		endif()
+	endif()
+endif()

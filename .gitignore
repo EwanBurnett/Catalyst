@@ -37,3 +37,9 @@
 *.log
 *.docx
 *.csv
+
+# Documentation Files
+Docs/HTML/
+Docs/Latex/
+
+LocalAssets/

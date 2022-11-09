@@ -1,6 +1,10 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+/** \file Engine.h
+*  a debug Engine header file.
+*/
+
 #include <string>
 
 namespace Engine{
