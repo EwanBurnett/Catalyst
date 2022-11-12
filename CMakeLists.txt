@@ -20,6 +20,17 @@ elseif(NOT GIT_FOUND)
 	message(FATAL_ERROR "Git Executable not found!")
 endif()
 
+add_subdirectory(External)
+
+# Find and validate all local subdependencies
+
+# D3D11.lib
+find_library(D3D11_LIB d3d11.lib PATHS "$ENV{DXSDK_DIR}/Lib/x86" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x86"     DOC "The directory where d3d11.lib resides")
+message(STATUS "Search for DirectX 11 returned directory: ${D3D11_LIB}")
+
+# D3DCOMPILER.lib
+find_library(D3DCOMPILER_LIB d3dcompiler.lib "$ENV{DXSDK_DIR}/Lib/x86" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x86"     DOC "The directory where d3dcompiler.lib resides")
+message(STATUS "Search for D3DCompiler returned directory: ${D3DCOMPILER_LIB}")
 
 
 

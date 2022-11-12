@@ -33,6 +33,8 @@
 # Build files
 /Build/
 
+# External subdependencies 
+/External/*/
 # Profiling / Log Files
 *.log
 *.docx
