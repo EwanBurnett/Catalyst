@@ -14,11 +14,11 @@ set(${PROJECT_NAME}_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/inc CACHE INTERNAL "${PRO
 
 add_library(${PROJECT_NAME} STATIC ${ENGINE_CPP_FILES} ${ENGINE_HEADER_FILES})
 
-
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_BINARY_DIR} ${ASSIMP_INCLUDE_DIR})
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_BINARY_DIR} ${ASSIMP_INCLUDE_DIR} "${Effects11_SOURCE_DIR}/inc/" ${DIRECTXTK_INCLUDE_DIR})
 
 #Configure the library
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Catalyst-Engine")
 
 # Link subdependencies
-target_link_libraries(${PROJECT_NAME} PUBLIC ${D3D11_LIB} assimp) 
+target_link_libraries(${PROJECT_NAME} PRIVATE ${D3D11_LIB} ${D3DCOMPILER_LIB} assimp DirectXTK Effects11) 

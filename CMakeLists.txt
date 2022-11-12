@@ -2,6 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.14)
 
 project(Catalyst VERSION 1.0)
 
+
 #Validate all git submodules
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
@@ -24,15 +25,17 @@ add_subdirectory(External)
 
 # Find and validate all local subdependencies
 
+set(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
+
 # D3D11.lib
-find_library(D3D11_LIB d3d11.lib PATHS "$ENV{DXSDK_DIR}/Lib/x86" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x86"     DOC "The directory where d3d11.lib resides")
+find_library(D3D11_LIB d3d11.lib PATHS "$ENV{DXSDK_DIR}/Lib/x64" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x64"     DOC "The directory where d3d11.lib resides")
 message(STATUS "Search for DirectX 11 returned directory: ${D3D11_LIB}")
 
 # D3DCOMPILER.lib
-find_library(D3DCOMPILER_LIB d3dcompiler.lib "$ENV{DXSDK_DIR}/Lib/x86" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x86"     DOC "The directory where d3dcompiler.lib resides")
+find_library(D3DCOMPILER_LIB d3dcompiler.lib "$ENV{DXSDK_DIR}/Lib/x64" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x64" REGISTRY_VIEW 64 DOC "The directory where d3dcompiler.lib resides")
 message(STATUS "Search for D3DCompiler returned directory: ${D3DCOMPILER_LIB}")
 
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUNICODE -D_UNICODE -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING")
 
 #Build the Engine
 add_subdirectory(Engine)
@@ -43,9 +46,11 @@ file(GLOB_RECURSE GAME_HEADER_FILES "Game/*.h")
 
 include_directories(Engine/inc)
 include_directories(Game/)
-add_executable(${PROJECT_NAME} ${GAME_CPP_FILES} ${GAME_HEADER_FILES})
+add_executable(${PROJECT_NAME} WIN32 ${GAME_CPP_FILES} ${GAME_HEADER_FILES})
+
 target_link_libraries(${PROJECT_NAME} CatalystEngine)
 
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
 #Build Docs
 find_package(Doxygen QUIET)
