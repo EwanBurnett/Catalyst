@@ -23,18 +23,7 @@ endif()
 
 add_subdirectory(External)
 
-# Find and validate all local subdependencies
-
-set(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
-
-# D3D11.lib
-find_library(D3D11_LIB d3d11.lib PATHS "$ENV{DXSDK_DIR}/Lib/x64" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x64"     DOC "The directory where d3d11.lib resides")
-message(STATUS "Search for DirectX 11 returned directory: ${D3D11_LIB}")
-
-# D3DCOMPILER.lib
-find_library(D3DCOMPILER_LIB d3dcompiler.lib "$ENV{DXSDK_DIR}/Lib/x64" "C:/Program Files (x86)/Microsoft DirectX SDK/Lib/x64" REGISTRY_VIEW 64 DOC "The directory where d3dcompiler.lib resides")
-message(STATUS "Search for D3DCompiler returned directory: ${D3DCOMPILER_LIB}")
-
+# Set Macro Definitions
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUNICODE -D_UNICODE -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING")
 
 #Build the Engine
@@ -46,11 +35,19 @@ file(GLOB_RECURSE GAME_HEADER_FILES "Game/*.h")
 
 include_directories(Engine/inc)
 include_directories(Game/)
+include_directories("$ENV{DXSDK_DIR}/include")
+
 add_executable(${PROJECT_NAME} WIN32 ${GAME_CPP_FILES} ${GAME_HEADER_FILES})
 
-target_link_libraries(${PROJECT_NAME} CatalystEngine)
+target_link_libraries(${PROJECT_NAME} CatalystEngine Effects11 DirectXTK)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+						VS_DEBUGGER_COMMAND "$<TARGET_FILE:${PROJECT_NAME}>"	)
+
+# Copy Assets to outdir
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_BINARY_DIR})
 
 #Build Docs
 find_package(Doxygen QUIET)

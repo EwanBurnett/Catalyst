@@ -4,6 +4,7 @@
 
 #include "Graphics/Window.h"
 #include "Graphics/Backends/DX11_GFX.h"
+#include "Core/Input.h"
 
 using namespace Engine;
 
@@ -18,7 +19,7 @@ int WINAPI WinMain(
     mode.adapterIndex = 1;
 
     Window window(L"Hello Cube", inst, mode);
-    window.SetIcon(L"E:/Source/repos/Vega-Framework/Vega-Renderer/AppIcon.ico");
+    window.SetIcon(L"Resources/Catalyst_Icon.ico");
     window.Show(showCmd);
 
     DX11_GFX gfx;
@@ -39,7 +40,10 @@ int WINAPI WinMain(
 
     Camera cam;
     cam.Position = { 0.0f, 0.0f, -2.0f };
-    //cam.FoVDegrees = { 90 };
+
+    Time time;
+    time.Reset();
+    Input::Init(&time);
 
     //Application Loop
     MSG msg;
@@ -52,13 +56,27 @@ int WINAPI WinMain(
         }
         else
         {
+            time.Tick();
+            float dt = time.DeltaTime();
+            Input::Advance();
+
             static float r = 0;
             r += 1.0f / 120000.0f;
 
             model.ComputeWorld({}, { cos(r) * 360, 45.0f, sin(r) * 360 });
             gfx.Clear(sin(r) * 0xD9, cos(r) * 0xAA, 0xAD, 0xFF);
-            cam.ComputeViewProjection();
+            { 
 
+                if (Input::Mouse::MouseMoved()) {
+                    auto mouseDelta = Input::Mouse::DeltaPosition();
+                    cam.Look(mouseDelta.x, mouseDelta.y, 100.0f * dt);
+                }
+                cam.ComputeViewProjection();
+            }
+            if (Input::Keyboard::KeyPressed(Input::Keys::KB_KEY_ESC))
+            {
+                PostQuitMessage(0x04);
+            }
             for (auto i = 0; i < model.meshes.size(); i++) {
                 gfx.Draw(model.worldMatrix, model.meshes.at(i), model.renderers.at(i), cam);
             }
