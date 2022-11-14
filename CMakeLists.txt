@@ -37,7 +37,9 @@ include_directories(Engine/inc)
 include_directories(Game/)
 include_directories("$ENV{DXSDK_DIR}/include")
 
-add_executable(${PROJECT_NAME} WIN32 ${GAME_CPP_FILES} ${GAME_HEADER_FILES})
+set(APP_RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Game/resources.rc")
+
+add_executable(${PROJECT_NAME} WIN32 ${GAME_CPP_FILES} ${GAME_HEADER_FILES} ${APP_RESOURCES})
 
 target_link_libraries(${PROJECT_NAME} CatalystEngine Effects11 DirectXTK)
 
@@ -53,7 +55,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/Docs/Catalyst")
 	#Build Documentation optionally
-	option(BUILD_DOCS "Build Catalyst Documentation" ON)
+	option(BUILD_DOCS "Build Catalyst Documentation" OFF)
 	if(BUILD_DOCS)
 		message(STATUS "Building Documentation")
 		execute_process(COMMAND ${DOXYGEN_EXECUTABLE} Catalyst WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Docs/" RESULT_VARIABLE DOXY_RESULT)
