@@ -5,6 +5,7 @@
 #include "Graphics/Window.h"
 #include "Graphics/Backends/DX11_GFX.h"
 #include "Core/Input.h"
+#include "IO/Importer.h"
 
 using namespace Engine;
 
@@ -18,24 +19,24 @@ int WINAPI WinMain(
     VideoMode mode = { .width = 1280, .height = 720 };
     mode.adapterIndex = 1;
 
-    Window window(L"Hello Cube", inst, mode);
+    Window window(L"Sponza Scene", inst, mode);
     window.SetIcon(L"Resources/Catalyst_Icon.ico");
     window.Show(showCmd);
 
     DX11_GFX gfx;
     gfx.Init(window, { .xResolution = 1280, .yResolution = 720 });
 
-    Primitives::Cube cube;
     Blinn* b = new Blinn;
     b->Diffuse = { 0x0f, 0xff, 0xf0, 0xff };
     b->Ambient = { 0xAA, 0xAA, 0xAA, 0xAA };
+
+    Model model;
+    Importer::LoadFromFile(model, "Resources\\Sponza.Asset");
 
     MeshRenderer renderer;
     renderer.material = b;
     renderer.shader = EShaderType::Blinn;
 
-    Model model;
-    model.meshes.push_back(cube);
     model.renderers.push_back(renderer);
 
     Camera cam;
@@ -63,14 +64,40 @@ int WINAPI WinMain(
             static float r = 0;
             r += 1.0f / 120000.0f;
 
-            model.ComputeWorld({}, { cos(r) * 360, 45.0f, sin(r) * 360 });
             gfx.Clear(sin(r) * 0xD9, cos(r) * 0xAA, 0xAD, 0xFF);
             { 
-
+                
                 if (Input::Mouse::MouseMoved()) {
                     auto mouseDelta = Input::Mouse::DeltaPosition();
                     cam.Look(mouseDelta.x, mouseDelta.y, 100.0f * dt);
                 }
+                Engine::Vector3f dir = { 0.0f, 0.0f, 0.0f };
+                if (Input::Keyboard::KeyDown(Input::Keys::KB_KEY_W))
+                {
+                    dir = dir + Engine::Vector3f{ 0.0f, 0.0f, 1.0f };
+                }
+                if (Input::Keyboard::KeyDown(Input::Keys::KB_KEY_S))
+                {
+                    dir = dir + Engine::Vector3f{ 0.0f, 0.0f, -1.0f };
+                }
+                if (Input::Keyboard::KeyDown(Input::Keys::KB_KEY_A))
+                {
+                    dir = dir + Engine::Vector3f{ -1, 0, 0 };
+                }
+                if (Input::Keyboard::KeyDown(Input::Keys::KB_KEY_D))
+                {
+                    dir = dir + Engine::Vector3f{ 1, 0, 0 };
+                }
+                if (Input::Keyboard::KeyDown(Input::Keys::KB_KEY_Q))
+                {
+                    dir = dir + Engine::Vector3f{ 0, -1, 0 };
+                }
+                if (Input::Keyboard::KeyDown(Input::Keys::KB_KEY_E))
+                {
+                    dir = dir + Engine::Vector3f{ 0, 1, 0 };
+                }
+
+                cam.Walk(dir, 25.0f * dt);
                 cam.ComputeViewProjection();
             }
             if (Input::Keyboard::KeyPressed(Input::Keys::KB_KEY_ESC))

@@ -9,7 +9,7 @@
         - Rewards understanding of game mechanics, heavily punishes negligence.
 
 ## Game Elements
-
+![GameElements](../Resources/GameElements.png)
 ### Player
 - Controlled via player input
     - WASD / Left Joystick Movement
