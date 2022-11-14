@@ -367,7 +367,6 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
             _setVector4Var("DIFFUSE", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Diffuse));
             _setVector4Var("Specular", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Specular));
             _setFloatVar("SPECULARPOWER", ((Engine::Blinn*)renderer.material)->SpecularPower);
-            _setVector3Var("DIRECTION", {-0.35f, -0.60f, -0.17f});  //TODO: Light Attributes
             _setVector3Var("CAMERAPOSITION", camera.Position);
             _setTextureVar("T_DIFFUSE", ((Engine::Blinn*)renderer.material)->DiffuseMap);
             _setTextureVar("T_NORMAL", ((Engine::Blinn*)renderer.material)->NormalMap);

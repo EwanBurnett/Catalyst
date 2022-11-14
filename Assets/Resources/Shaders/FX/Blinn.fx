@@ -1,10 +1,15 @@
 //Blinn FX Shader
 //Ewan Burnett - 2022
 
+#include "LightHelper.fxh"
+
 cbuffer CBufferPerFrame
 {
-    float3 lightDirection : DIRECTION;
-    float3 cameraPosition : CAMERAPOSITION;   
+    DirectionalLight directionalLight;
+    PointLight pointLights[NUM_POINT_LIGHTS];
+    SpotLight spotLights[NUM_SPOT_LIGHTS];
+
+    float3 cameraPosition : CAMERAPOSITION;
 };
 
 cbuffer CBufferPerAttrib
@@ -68,8 +73,8 @@ struct VS_OUT
     float3 normal : NORMAL;
     float3 tangent : TANGENT;
     float3 binormal : BINORMAL;
-    float3 lightDir : TEXCOORD1;
-    float3 viewDir : TEXCOORD2;
+    float3 viewDir : TEXCOORD1;
+    float3 worldPos : POSITION;
 };
 
 VS_OUT vs_main(VS_IN input)
@@ -81,8 +86,7 @@ VS_OUT vs_main(VS_IN input)
     output.normal = normalize(mul(float4(input.normal, 0), World).xyz);
     output.tangent = normalize(mul(float4(input.tangent, 0), World).xyz);
     output.binormal = normalize(mul(float4(input.binormal, 0), World).xyz);
-    output.lightDir = normalize(lightDirection);
-    
+    output.worldPos = mul(input.objPos, World).xyz;
     //Compute the view direction of the camera
     float3 worldPos = mul(float4(input.objPos, 1), World).xyz;
     output.viewDir = normalize(cameraPosition - worldPos);
@@ -90,134 +94,196 @@ VS_OUT vs_main(VS_IN input)
     return output;
 }
 
-float4 ps_main(VS_OUT input) : SV_Target
+float4 ps_main(VS_OUT input, uniform int numPointLights, uniform int numSpotLights) : SV_Target
 {
     float4 output = (float4) 0;
     
     float3 normal = normalize(input.normal);
-    float3 lightDir = normalize(input.lightDir);
     float3 viewDir = normalize(input.viewDir);
-    
-    //Lambert's cosine law
-    float n_dot_l = dot(lightDir, normal);
-    float3 halfVector = normalize(lightDir + viewDir);
-    float n_dot_h = dot(normal, halfVector);
     
     float4 colour = diffuseColour;
    
-
-    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
-
-    //Apply lighting    
-    float3 ambient = ambientColour.rgb * ambientColour.a * colour.rgb;
-    float3 specular = specularColour.rgb * specularColour.a * min(coefficients.z, colour.w);
-    float3 diffuse = diffuseColour.rgb * diffuseColour.a * (coefficients.y * colour.rgb);
+    float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
-    output.rgb = ambient + diffuse + specular;
-    output.a = diffuseColour.a;
+    LightContributionData lightData;
+    lightData.colour = colour;
+    lightData.normal = normal;
+    lightData.viewDirection = viewDir;
+    lightData.specularColour = specularColour;
+    lightData.specularPower = specularPower;
     
-    return output;
+    float3 totalContribution = (float3) 0;
+    
+    [unroll]
+    for (int i = 0; i < numPointLights; i++)
+    {
+        lightData.lightDirection = GetLightData(pointLights[i].position, input.worldPos, pointLights[i].radius);
+        lightData.lightColour = pointLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
+    
+   [unroll]
+    for (int i = 0; i < numSpotLights; i++)
+    {
+        lightData.lightDirection = GetLightData(spotLights[i].position, input.worldPos,spotLights[i].radius);
+        lightData.lightColour = spotLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
+
+
+    output.rgb = ambient + totalContribution;
+    output.a = colour.a;
+    
+        return output;
 }
 
 //Pixel shader for objects with a texture bound.
-float4 ps_diffuse(VS_OUT input) : SV_Target
+float4 ps_diffuse(VS_OUT input, uniform int numPointLights, uniform int numSpotLights) : SV_Target
 {
-    float4 output = (float4) 0;
+     float4 output = (float4) 0;
     
     float3 normal = normalize(input.normal);
-    float3 lightDir = normalize(input.lightDir);
     float3 viewDir = normalize(input.viewDir);
     
-    //Lambert's cosine law
-    float n_dot_l = dot(lightDir, normal);
-    float3 halfVector = normalize(lightDir + viewDir);
-    float n_dot_h = dot(normal, halfVector);
-    
-    float4 colour = DiffuseMap.Sample(ColourSampler, input.texCoord);
+    float4 colour =  DiffuseMap.Sample(ColourSampler, input.texCoord);
    
-
-    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
-
-    //Apply lighting    
-    float3 ambient = ambientColour.rgb * ambientColour.a * colour.rgb;
-    float3 specular = specularColour.rgb * specularColour.a * min(coefficients.z, colour.w);
-    float3 diffuse = diffuseColour.rgb * diffuseColour.a * (coefficients.y * colour.rgb);
+    float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
-    output.rgb = ambient + diffuse + specular;
-    output.a = diffuseColour.a;
+    LightContributionData lightData;
+    lightData.colour = colour;
+    lightData.normal = normal;
+    lightData.viewDirection = viewDir;
+    lightData.specularColour = specularColour;
+    lightData.specularPower = specularPower;
     
-    return output;
+    float3 totalContribution = (float3) 0;
+    
+    [unroll]
+    for (int i = 0; i < numPointLights; i++)
+    {
+        lightData.lightDirection = GetLightData(pointLights[i].position, input.worldPos, pointLights[i].radius);
+        lightData.lightColour = pointLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
+    
+   [unroll]
+    for (int i = 0; i < numSpotLights; i++)
+    {
+        lightData.lightDirection = GetLightData(spotLights[i].position, input.worldPos,spotLights[i].radius);
+        lightData.lightColour = spotLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
+
+
+    output.rgb = ambient + totalContribution;
+    output.a = colour.a;
+    
+        return output;
+
 }
 
 //Pixel shader for objects with a texture bound.
-float4 ps_diffuse_normal(VS_OUT input) : SV_Target
+float4 ps_diffuse_normal(VS_OUT input, uniform int numPointLights, uniform int numSpotLights) : SV_Target
 {
-    float4 output = (float4) 0;
+     float4 output = (float4) 0;
     
-    //shift the sampled vector to the range [0, 1]
+     //shift the sampled vector to the range [0, 1]
     float3 normal = (2 * NormalMap.Sample(ColourSampler, input.texCoord).xyz) - 1.0;
     
     float3x3 tbn = float3x3(input.tangent, input.binormal, input.normal);
     normal = mul(normal, tbn);
-    
-    float3 lightDir = normalize(input.lightDir);
     float3 viewDir = normalize(input.viewDir);
     
-    //Lambert's cosine law
-    float n_dot_l = dot(lightDir, normal);
-    float3 halfVector = normalize(lightDir + viewDir);
-    float n_dot_h = dot(normal, halfVector);
-    
-    float4 colour = DiffuseMap.Sample(ColourSampler, input.texCoord);
+    float4 colour =  DiffuseMap.Sample(ColourSampler, input.texCoord);
    
-
-    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
-
-    //Apply lighting    
-    float3 ambient = ambientColour.rgb * ambientColour.a * colour.rgb;
-    float3 specular = specularColour.rgb * specularColour.a * min(coefficients.z, colour.w);
-    float3 diffuse = diffuseColour.rgb * diffuseColour.a * (coefficients.y * colour.rgb);
+    float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
-    output.rgb = ambient + diffuse + specular;
-    output.a = diffuseColour.a;
+    LightContributionData lightData;
+    lightData.colour = colour;
+    lightData.normal = normal;
+    lightData.viewDirection = viewDir;
+    lightData.specularColour = specularColour;
+    lightData.specularPower = specularPower;
     
-    return output;
+    float3 totalContribution = (float3) 0;
+    
+   [unroll]
+    for (int i = 0; i < numPointLights; i++)
+    {
+        lightData.lightDirection = GetLightData(pointLights[i].position, input.worldPos, pointLights[i].radius);
+        lightData.lightColour = pointLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
+    
+   [unroll]
+    for (int i = 0; i < numSpotLights; i++)
+    {
+        lightData.lightDirection = GetLightData(spotLights[i].position, input.worldPos,spotLights[i].radius);
+        lightData.lightColour = spotLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
+
+    output.rgb = ambient + totalContribution;
+    output.a = colour.a;
+    
+        return output;
+
 }
 
 //Pixel shader for objects with a texture bound.
-float4 ps_diffuse_normal_spec(VS_OUT input) : SV_Target
+float4 ps_diffuse_normal_spec(VS_OUT input, uniform int numPointLights, uniform int numSpotLights) : SV_Target
 {
     float4 output = (float4) 0;
+     float4 spec = SpecularMap.Sample(ColourSampler, input.texCoord);
     
-    //shift the sampled vector to the range [0, 1]
+       
+
+
+ float3 specular = spec.rgb * spec.a ;
+
+     //shift the sampled vector to the range [0, 1]
     float3 normal = (2 * NormalMap.Sample(ColourSampler, input.texCoord).xyz) - 1.0;
     
     float3x3 tbn = float3x3(input.tangent, input.binormal, input.normal);
     normal = mul(normal, tbn);
-    
-    float3 lightDir = normalize(input.lightDir);
     float3 viewDir = normalize(input.viewDir);
     
-    //Lambert's cosine law
-    float n_dot_l = dot(lightDir, normal);
-    float3 halfVector = normalize(lightDir + viewDir);
-    float n_dot_h = dot(normal, halfVector);
+    float4 colour =  DiffuseMap.Sample(ColourSampler, input.texCoord);
+   
+    float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
-    float4 colour = DiffuseMap.Sample(ColourSampler, input.texCoord);
-    float4 spec = SpecularMap.Sample(ColourSampler, input.texCoord);
+    LightContributionData lightData;
+    lightData.colour = colour;
+    lightData.normal = normal;
+    lightData.viewDirection = viewDir;
+    lightData.specularColour = specularColour;
+    lightData.specularPower = specularPower;
+    
+    float3 totalContribution = (float3) 0;
+    
+    [unroll]
+    for (int i = 0; i < numPointLights; i++)
+    {
+        lightData.lightDirection = GetLightData(pointLights[i].position, input.worldPos, pointLights[i].radius);
+        lightData.lightColour = pointLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
+    
+   [unroll]
+    for (int i = 0; i < numSpotLights; i++)
+    {
+        lightData.lightDirection = GetLightData(spotLights[i].position, input.worldPos,spotLights[i].radius);
+        lightData.lightColour = spotLights[i].colour;
+        totalContribution += GetLightContribution(lightData);
+    }
 
-    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
 
-    //Apply lighting    
-    float3 ambient = ambientColour.rgb * ambientColour.a * colour.rgb;
-    float3 specular = spec.rgb * spec.a * min(coefficients.z, colour.w);
-    //float3 specular = (spec.rgb * spec.a * min(pow(saturate(dot(normal, halfVector)), specularPower), colour.w));
-    float3 diffuse = diffuseColour.rgb * diffuseColour.a * (coefficients.y * colour.rgb);
+
+    output.rgb = ambient + totalContribution + specular;
+    output.a = colour.a;
     
-    output.rgb = ambient + diffuse + specular;
-    output.a = diffuseColour.a;
-    
-    return output;
+        return output;
+
 }
 
 
@@ -227,7 +293,7 @@ technique11 main
     {
         SetVertexShader(CompileShader(vs_5_0, vs_main()));
         SetGeometryShader(NULL);
-        SetPixelShader(CompileShader(ps_5_0, ps_main()));
+        SetPixelShader(CompileShader(ps_5_0, ps_main(8, 8)));
 		
         SetRasterizerState(DisableCulling);
     }
@@ -241,7 +307,7 @@ technique11 Textured
     {
         SetVertexShader(CompileShader(vs_5_0, vs_main()));
         SetGeometryShader(NULL);
-        SetPixelShader(CompileShader(ps_5_0, ps_diffuse()));
+        SetPixelShader(CompileShader(ps_5_0, ps_diffuse(8, 8)));
 		
         SetRasterizerState(DisableCulling);
     }
@@ -253,7 +319,7 @@ technique11 Alpha
     {
         SetVertexShader(CompileShader(vs_5_0, vs_main()));
         SetGeometryShader(NULL);
-        SetPixelShader(CompileShader(ps_5_0, ps_diffuse_normal()));
+        SetPixelShader(CompileShader(ps_5_0, ps_diffuse_normal(8, 8)));
 		
         SetRasterizerState(DisableCulling);
     }
@@ -266,7 +332,7 @@ technique11 Specular
     {
         SetVertexShader(CompileShader(vs_5_0, vs_main()));
         SetGeometryShader(NULL);
-        SetPixelShader(CompileShader(ps_5_0, ps_diffuse_normal_spec()));
+        SetPixelShader(CompileShader(ps_5_0, ps_diffuse_normal_spec(8, 8)));
 		
         SetRasterizerState(DisableCulling);
         SetBlendState(EnableAlphaBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
