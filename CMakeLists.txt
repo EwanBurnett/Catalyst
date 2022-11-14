@@ -39,6 +39,8 @@ include_directories("$ENV{DXSDK_DIR}/include")
 
 set(APP_RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Game/resources.rc")
 
+set(VS_STARTUP_PROJECT ${PROJECT_NAME})
+
 add_executable(${PROJECT_NAME} WIN32 ${GAME_CPP_FILES} ${GAME_HEADER_FILES} ${APP_RESOURCES})
 
 target_link_libraries(${PROJECT_NAME} CatalystEngine Effects11 DirectXTK)
@@ -49,8 +51,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "
 						VS_DEBUGGER_COMMAND "$<TARGET_FILE:${PROJECT_NAME}>"	)
 
 # Copy Assets to outdir
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_BINARY_DIR})
-
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Assets/ $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 #Build Docs
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/Docs/Catalyst")
