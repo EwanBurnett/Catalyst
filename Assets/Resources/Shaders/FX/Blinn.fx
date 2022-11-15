@@ -25,6 +25,7 @@ cbuffer CBufferPerObject
 {
     float4x4 WorldViewProj : WORLDVIEWPROJECTION;
     float4x4 World : WORLD;
+    float4x4 ProjectiveTextureMatrix;
 };
 
 Texture2D DiffuseMap : T_DIFFUSE;
@@ -32,6 +33,19 @@ Texture2D DiffuseMap : T_DIFFUSE;
 Texture2D NormalMap : T_NORMAL;
 
 Texture2D SpecularMap : T_SPECULAR;
+
+Texture2D ShadowMap;
+
+static const float4 White = {1, 1, 1, 1};
+static const float3 Black = {0, 0, 0};
+static const float DepthBias = 0.005;
+
+SamplerState ShadowMapSampler{
+    Filter = ANISOTROPIC;
+    AddressU = BORDER;
+    AddressV = BORDER;
+    BorderColor = White;
+};
 
 BlendState EnableAlphaBlending
 {
@@ -75,6 +89,8 @@ struct VS_OUT
     float3 tangent : TANGENT;
     float3 binormal : BINORMAL;
     float3 viewDir : TEXCOORD1;
+    float Attenuation : TEXCOORD2;
+    float4 ShadowTexCoords : TEXCOORD3;
     float3 worldPos : POSITION;
 };
 
@@ -92,6 +108,17 @@ VS_OUT vs_main(VS_IN input)
     float3 worldPos = mul(float4(input.objPos, 1), World).xyz;
     output.viewDir = normalize(cameraPosition - worldPos);
     
+
+    [unroll]
+    for(int i = 0; i < NUM_POINT_LIGHTS; i++)
+    {
+        float3 lightDir = pointLights[i].position - output.worldPos;
+        output.Attenuation += saturate(1.0f - (length(lightDir) / pointLights[i].radius));
+    }
+    output.Attenuation = normalize(output.Attenuation); //?
+
+    output.ShadowTexCoords = mul(input.objPos, ProjectiveTextureMatrix);
+
     return output;
 }
 
@@ -140,8 +167,20 @@ float4 ps_main(VS_OUT input, uniform int numPointLights, uniform int numSpotLigh
         totalContribution += GetLightContribution(lightData);
     }
 
+    float3 diffuse = (totalContribution * (coefficients.y * colour.rgb));
+    if(input.ShadowTexCoords.w >= 0.0f){
+        input.ShadowTexCoords.xyz /= input.ShadowTexCoords.w;
+        float pixelDepth = input.ShadowTexCoords.z;
+        float sampledDepth = ShadowMap.Sample(ShadowMapSampler, input.ShadowTexCoords.xy).x + DepthBias;
 
-    output.rgb = ambient + (totalContribution * (coefficients.y * colour.rgb));
+        //boolean shadows
+        float3 shadow = (pixelDepth > sampledDepth ? Black : White.rgb);
+        
+        diffuse *= shadow;
+        //specular *= shadow;
+    }
+
+    output.rgb = ambient + diffuse;
     output.a = colour.a;
     
         return output;
@@ -281,15 +320,6 @@ float4 ps_diffuse_normal_spec(VS_OUT input, uniform int numPointLights, uniform 
    
     float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
-    float3 lightDir = normalize(directionalLight.direction);
-    
-    //Lambert's cosine law
-    float n_dot_l = dot(lightDir, normal);
-    float3 halfVector = normalize(lightDir + viewDir);
-    float n_dot_h = dot(normal, halfVector);   
-
-    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
-
 
     LightContributionData lightData;
     lightData.colour = colour;
@@ -300,6 +330,11 @@ float4 ps_diffuse_normal_spec(VS_OUT input, uniform int numPointLights, uniform 
     
     float3 totalContribution = (float3) 0;
     
+    //Directional Light
+    lightData.lightDirection = (float4)(directionalLight.direction, 1);
+    lightData.lightColour = directionalLight.colour;
+    totalContribution += GetLightContribution(lightData);
+
     [unroll]
     for (int i = 0; i < numPointLights; i++)
     {
@@ -318,7 +353,7 @@ float4 ps_diffuse_normal_spec(VS_OUT input, uniform int numPointLights, uniform 
 
 
 
-    output.rgb = ambient + (totalContribution * (coefficients.y * colour.rgb)) + specular;
+    output.rgb = ambient + totalContribution + specular;
     output.a = colour.a;
     
         return output;

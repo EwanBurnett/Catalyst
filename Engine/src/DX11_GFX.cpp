@@ -190,7 +190,7 @@ Microsoft::WRL::ComPtr<ID3D10Blob> CompileShader(const Engine::EShaderType type)
         timer.Reset();
         timer.Start();
 
-        HR(D3DCompileFromFile(fxPath.c_str(), nullptr, nullptr, nullptr, _In_ "fx_5_0", shaderFlags, 0, pBlob.ReleaseAndGetAddressOf(), &pErr), ("Unable to compile shader %s from file", Engine::WStringToString(fxPath).c_str()));
+        HR(D3DCompileFromFile(fxPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, nullptr, _In_ "fx_5_0", shaderFlags, 0, pBlob.ReleaseAndGetAddressOf(), &pErr), ("Unable to compile shader %s from file", Engine::WStringToString(fxPath).c_str()));
         
         timer.Tick();
         ERR(pErr != nullptr, ("Shader Compilation Errors Found: \n%s", (char*)(pErr->GetBufferPointer())));
@@ -619,9 +619,11 @@ bool DX11_GFX::Init(Engine::Window& window, Engine::GraphicsMode mode)
 {
 
     //DEBUG TEMP
-    m_lights.directional = { .colour{1, 1, 1, 1}, .direction{0.5f, -0.5f, 0.8f} };
-    m_lights.pointLights[0] = { .colour{1.0f, 1.0f, 0.5f, 1.0f}, .position{0.0f, 5.0f, 0.0f}, .radius{65.0f} };
-    m_lights.pointLights[1] = { .colour{1.0f, 0.5f, 0.7f, 1.0f}, .position{3.0f, 10.0f, -50.0f}, .radius{85.0f} };
+    m_lights.directional = { .colour{1, 1, 1, 0.2}, .direction{0.5f, -0.5f, 0.8f} };
+    m_lights.pointLights[0] = { .colour{0.8f, 0.1f, 0.4f, 0.6f}, .position{0.0f, 5.0f, 0.0f}, .radius{65.0f} };
+    //m_lights.pointLights[1] = { .colour{1.0f, 1.0f, 0.0f, 1.0f}, .position{3.0f, 10.0f, -50.0f}, .radius{85.0f} };
+    //m_lights.pointLights[2] = { .colour{1.0f, 0.0f, 1.0f, 1.0f}, .position{15.0f, 30.0f, -40.0f}, .radius{105.0f} };
+    //m_lights.pointLights[3] = { .colour{0.0f, 0.0f, 1.0f, 1.0f}, .position{20.0f, 20.0f, -20.0f}, .radius{40.0f} };
 
     
     //Validate the window handle
