@@ -29,7 +29,7 @@ namespace Engine
      void Clear(uint8_t r = 0x00, uint8_t g = 0x00, uint8_t b = 0x00, uint8_t a = 0x00) override;
      void Present() override;
      void SetGraphicsMode(const Window& window, GraphicsMode mode) override;
-
+    
  private:
      
      Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;

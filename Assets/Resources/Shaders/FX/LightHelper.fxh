@@ -13,14 +13,14 @@ struct DirectionalLight
 struct PointLight
 {
     float4 colour;
-    float radius;
     float3 position;
+    float radius;
 };
 
 struct SpotLight
 {
-    float3 position;
     float4 colour;
+    float3 position;
     float radius;
     float3 direction;
     float innerRadius;

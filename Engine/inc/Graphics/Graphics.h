@@ -3,7 +3,9 @@
 #include "Window.h"
 #include "Model.h"
 #include "Camera.h"
-#include "../Sprite.h"
+#include "Sprite.h"
+#include "Lights.h"
+
 
 namespace Engine
 {

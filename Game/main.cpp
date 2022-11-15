@@ -17,7 +17,7 @@ int WINAPI WinMain(
 )
 {
     VideoMode mode = { .width = 1280, .height = 720 };
-    mode.adapterIndex = 1;
+    mode.adapterIndex = 0;
 
     Window window(L"Sponza Scene", inst, mode);
     window.SetIcon(L"Resources/Catalyst_Icon.ico");

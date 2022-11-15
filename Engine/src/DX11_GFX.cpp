@@ -3,6 +3,7 @@
 using namespace Engine;
 
 constexpr UINT NUM_THREADS = 4;
+Lights m_lights;
 
 //DX11 SETUP ---------------------------------------------------------
 
@@ -192,7 +193,7 @@ Microsoft::WRL::ComPtr<ID3D10Blob> CompileShader(const Engine::EShaderType type)
         HR(D3DCompileFromFile(fxPath.c_str(), nullptr, nullptr, nullptr, _In_ "fx_5_0", shaderFlags, 0, pBlob.ReleaseAndGetAddressOf(), &pErr), ("Unable to compile shader %s from file", Engine::WStringToString(fxPath).c_str()));
         
         timer.Tick();
-        //ERR(pErr != nullptr, ("Shader Compilation Errors Found: \n%s", Engine::WStringToString((LPCWSTR)pErr->GetBufferPointer()).c_str()));
+        ERR(pErr != nullptr, ("Shader Compilation Errors Found: \n%s", (char*)(pErr->GetBufferPointer())));
         Engine::Log("Compiled shader %s in %fs\n", Engine::WStringToString(fxPath).c_str(), timer.DeltaTime());
     }
 
@@ -201,6 +202,7 @@ Microsoft::WRL::ComPtr<ID3D10Blob> CompileShader(const Engine::EShaderType type)
 
 Microsoft::WRL::ComPtr<ID3DX11Effect> LoadShader(const Engine::MeshRenderer& renderer, const Microsoft::WRL::ComPtr<ID3D11Device>& device)
 {
+    // ERR((renderer == nullptr), "renderer was nullptr!");
     //Attempt to retrieve the compiled shader from the resource pool
     Microsoft::WRL::ComPtr<ID3DX11Effect> shader = ResourcePool::GetShader(renderer.shader);
 
@@ -240,6 +242,13 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
         Microsoft::WRL::ComPtr<ID3DX11EffectVariable> var = shader->GetVariableBySemantic(semantic.c_str());
         ERR(var->IsValid() == false, "Variable Semantic is Invalid!");
         HR(var->AsMatrix()->SetMatrix(reinterpret_cast<const float*>(&mat._matrix)), ("Unable to set variable %s", semantic.c_str()));   
+    };
+
+    auto _setClassVar = [&](const std::basic_string<char>& name, const void* pData, size_t size)
+    {
+        Microsoft::WRL::ComPtr<ID3DX11EffectVariable> var = shader->GetVariableByName(name.c_str());
+        ERR(var->IsValid() == false, "Variable Name is Invalid!");
+        HR(var->SetRawValue(pData, 0, size), ("Unable to set variable %s", name.c_str()));
     };
 
     auto _setFloatVar = [&](const std::basic_string<char>& semantic, const float& value)
@@ -371,6 +380,9 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
             _setTextureVar("T_DIFFUSE", ((Engine::Blinn*)renderer.material)->DiffuseMap);
             _setTextureVar("T_NORMAL", ((Engine::Blinn*)renderer.material)->NormalMap);
             _setTextureVar("T_SPECULAR", ((Engine::Blinn*)renderer.material)->SpecularMap);
+            _setClassVar("pointLights", (void*)(&m_lights.pointLights), sizeof(PointLight) * NUM_POINT_LIGHTS);
+            _setClassVar("directionalLight", (void*)(&m_lights.directional), sizeof(DirectionalLight));
+            _setClassVar("spotLights", (void*)(& m_lights.spotLights), sizeof(SpotLight)* NUM_SPOT_LIGHTS);
             break;
         case SpriteRenderer:
             _setMatrixVar("WORLDVIEWPROJECTION", worldProj2D);
@@ -605,6 +617,13 @@ void SetPrimitiveTopology(const Engine::MeshRenderer renderer,const Microsoft::W
  */
 bool DX11_GFX::Init(Engine::Window& window, Engine::GraphicsMode mode)
 {
+
+    //DEBUG TEMP
+    m_lights.directional = { .colour{1, 1, 1, 1}, .direction{0.5f, -0.5f, 0.8f} };
+    m_lights.pointLights[0] = { .colour{1.0f, 1.0f, 0.5f, 1.0f}, .position{0.0f, 5.0f, 0.0f}, .radius{65.0f} };
+    m_lights.pointLights[1] = { .colour{1.0f, 0.5f, 0.7f, 1.0f}, .position{3.0f, 10.0f, -50.0f}, .radius{85.0f} };
+
+    
     //Validate the window handle
     ERR(window.m_WindowHandle == nullptr, "Window Handle is invalid!");
 

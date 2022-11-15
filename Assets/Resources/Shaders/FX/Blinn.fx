@@ -105,6 +105,15 @@ float4 ps_main(VS_OUT input, uniform int numPointLights, uniform int numSpotLigh
    
     float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
+    float3 lightDir = normalize(directionalLight.direction);
+    
+    //Lambert's cosine law
+    float n_dot_l = dot(lightDir, normal);
+    float3 halfVector = normalize(lightDir + viewDir);
+    float n_dot_h = dot(normal, halfVector);   
+
+    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
+
     LightContributionData lightData;
     lightData.colour = colour;
     lightData.normal = normal;
@@ -131,7 +140,7 @@ float4 ps_main(VS_OUT input, uniform int numPointLights, uniform int numSpotLigh
     }
 
 
-    output.rgb = ambient + totalContribution;
+    output.rgb = ambient + (totalContribution * (coefficients.y * colour.rgb));
     output.a = colour.a;
     
         return output;
@@ -149,6 +158,15 @@ float4 ps_diffuse(VS_OUT input, uniform int numPointLights, uniform int numSpotL
    
     float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
+     float3 lightDir = normalize(directionalLight.direction);
+    
+    //Lambert's cosine law
+    float n_dot_l = dot(lightDir, normal);
+    float3 halfVector = normalize(lightDir + viewDir);
+    float n_dot_h = dot(normal, halfVector);   
+
+    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
+
     LightContributionData lightData;
     lightData.colour = colour;
     lightData.normal = normal;
@@ -175,7 +193,7 @@ float4 ps_diffuse(VS_OUT input, uniform int numPointLights, uniform int numSpotL
     }
 
 
-    output.rgb = ambient + totalContribution;
+    output.rgb = ambient + (totalContribution * (coefficients.y * colour.rgb));
     output.a = colour.a;
     
         return output;
@@ -198,6 +216,16 @@ float4 ps_diffuse_normal(VS_OUT input, uniform int numPointLights, uniform int n
    
     float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
+     float3 lightDir = normalize(directionalLight.direction);
+    
+    //Lambert's cosine law
+    float n_dot_l = dot(lightDir, normal);
+    float3 halfVector = normalize(lightDir + viewDir);
+    float n_dot_h = dot(normal, halfVector);   
+
+    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
+
+
     LightContributionData lightData;
     lightData.colour = colour;
     lightData.normal = normal;
@@ -223,7 +251,7 @@ float4 ps_diffuse_normal(VS_OUT input, uniform int numPointLights, uniform int n
         totalContribution += GetLightContribution(lightData);
     }
 
-    output.rgb = ambient + totalContribution;
+    output.rgb = ambient + (totalContribution * (coefficients.y * colour.rgb));
     output.a = colour.a;
     
         return output;
@@ -252,6 +280,16 @@ float4 ps_diffuse_normal_spec(VS_OUT input, uniform int numPointLights, uniform 
    
     float3 ambient = GetVectorColourContribution(ambientColour, colour.rgb);
     
+    float3 lightDir = normalize(directionalLight.direction);
+    
+    //Lambert's cosine law
+    float n_dot_l = dot(lightDir, normal);
+    float3 halfVector = normalize(lightDir + viewDir);
+    float n_dot_h = dot(normal, halfVector);   
+
+    float3 coefficients = lit(n_dot_l, n_dot_h, specularPower);
+
+
     LightContributionData lightData;
     lightData.colour = colour;
     lightData.normal = normal;
@@ -279,7 +317,7 @@ float4 ps_diffuse_normal_spec(VS_OUT input, uniform int numPointLights, uniform 
 
 
 
-    output.rgb = ambient + totalContribution + specular;
+    output.rgb = ambient + (totalContribution * (coefficients.y * colour.rgb)) + specular;
     output.a = colour.a;
     
         return output;
