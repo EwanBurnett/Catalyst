@@ -59,6 +59,7 @@ int WINAPI WinMain(
         {
             time.Tick();
             float dt = time.DeltaTime();
+            Log("dt: %d\n", (int)(1.0f / dt));
             Input::Advance();
 
             static float r = 0;

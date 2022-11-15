@@ -35,12 +35,12 @@ void ProcessKey(USHORT status, UINT code)
 {
     if (status == RI_KEY_MAKE)
     {
-        printf("Key %c : DOWN \n", code);
+        //printf("Key %c : DOWN \n", code);
         Input::Keyboard::m_Inputs[0].set(code, true);
     }
     else if (status == RI_KEY_BREAK)
     {
-        printf("Key %c : UP \n", code);
+        //printf("Key %c : UP \n", code);
         Input::Keyboard::m_Inputs[0].set(code, false);
     }
 
@@ -312,7 +312,7 @@ void Input::Init(Time* timer)
 void Input::Advance()
 {
     Keyboard::Advance();
-    printf("\n---------------\n%s\n", Keyboard::m_Inputs[2].to_string().c_str());
+   // printf("\n---------------\n%s\n", Keyboard::m_Inputs[2].to_string().c_str());
     Mouse::Advance();
 }
 
