@@ -17,18 +17,17 @@
 #### Attributes
 - Level
     - Increases base attributes
-        - VIG (Vigor)
-            - Determines max health 
-        - INT (Intelligence)
-            - Determines magical action potency
-        - FCS (Focus)
-            - Determines magical action critical chance
-        - STR (Strength)
-            - Determines physical action potency
-        - DET (Determination)
-            - Determines physical action critical chance
-        - ATT (Attunement)
-            - Determines Ether absorbtion rate and Action Recast Speed
+
+    | Short | Attribute | Description |
+    | ----- | --------- | ----------- |
+    | VIG   | Vigor     | Determines Max Health |
+    | INT | Intelligence | Determines Magical Action Potency|
+    | FCS | Focus | Determines Magical Action Critical Chance |
+    | STR | Strength | Determines Physical Action Potency | 
+    | DET | Determination | Determines Physical Action Critical Chance |
+    | ATT | Attunement | Determines Ether absorbtion rate and Action recast speed |
+
+    
 - Health
     - When depleted, the player will die.
 - Stamina

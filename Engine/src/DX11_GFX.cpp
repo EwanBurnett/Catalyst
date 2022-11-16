@@ -227,7 +227,8 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
     if(!renderer.technique.empty())
     {
         //Attempt to retrieve the effect technique by name.
-        tech = shader->GetTechniqueByName(renderer.technique.c_str());
+        //tech = shader->GetTechniqueByName(renderer.technique.c_str());    //TODO: Refactor Technique Names 
+        tech = shader->GetTechniqueByIndex(0);
     }
     ERR(!tech->IsValid(), "Technique Is Invalid!");
 
@@ -244,11 +245,11 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
         HR(var->AsMatrix()->SetMatrix(reinterpret_cast<const float*>(&mat._matrix)), ("Unable to set variable %s", semantic.c_str()));   
     };
 
-    auto _setClassVar = [&](const std::basic_string<char>& name, const void* pData, size_t size)
+    auto _setClassVar = [&](const std::basic_string<char>& semantic, const void* pData, size_t size)
     {
-        Microsoft::WRL::ComPtr<ID3DX11EffectVariable> var = shader->GetVariableByName(name.c_str());
+        Microsoft::WRL::ComPtr<ID3DX11EffectVariable> var = shader->GetVariableBySemantic(semantic.c_str());
         ERR(var->IsValid() == false, "Variable Name is Invalid!");
-        HR(var->SetRawValue(pData, 0, size), ("Unable to set variable %s", name.c_str()));
+        HR(var->SetRawValue(pData, 0, size), ("Unable to set variable %s", semantic.c_str()));
     };
 
     auto _setFloatVar = [&](const std::basic_string<char>& semantic, const float& value)
@@ -336,7 +337,7 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
                 ieDesc.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
                 ieDesc.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
                 ieDesc.push_back({ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
-                ieDesc.push_back({ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+                //ieDesc.push_back({ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
                 break;
             case SpriteRenderer:
                 ieDesc.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
@@ -361,6 +362,7 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
         const Matrix4x4 worldViewProj = Engine::Math::MatrixMultiply(world, viewProjection);
         
         const Matrix4x4 worldProj2D = Engine::Math::MatrixMultiply(world, camera.orthoProjMatrix);
+        Engine::Colour fogclr = { 0xff, 0x00, 0x00, 0xff };
 
         switch (renderer.shader)
         {
@@ -372,17 +374,23 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
         case(Blinn):
             _setMatrixVar("WORLD", world);
             _setMatrixVar("WORLDVIEWPROJECTION", worldViewProj);
+
             _setVector4Var("AMBIENT", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Ambient));
             _setVector4Var("DIFFUSE", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Diffuse));
-            _setVector4Var("Specular", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Specular));
+            _setVector4Var("SPECULAR", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Specular));
             _setFloatVar("SPECULARPOWER", ((Engine::Blinn*)renderer.material)->SpecularPower);
             _setVector3Var("CAMERAPOSITION", camera.Position);
             _setTextureVar("T_DIFFUSE", ((Engine::Blinn*)renderer.material)->DiffuseMap);
             _setTextureVar("T_NORMAL", ((Engine::Blinn*)renderer.material)->NormalMap);
             _setTextureVar("T_SPECULAR", ((Engine::Blinn*)renderer.material)->SpecularMap);
-            _setClassVar("pointLights", (void*)(&m_lights.pointLights), sizeof(PointLight) * NUM_POINT_LIGHTS);
-            _setClassVar("directionalLight", (void*)(&m_lights.directional), sizeof(DirectionalLight));
-            _setClassVar("spotLights", (void*)(& m_lights.spotLights), sizeof(SpotLight)* NUM_SPOT_LIGHTS);
+            _setClassVar("POINTLIGHTS", (void*)(&m_lights.pointLights), sizeof(PointLight) * NUM_POINT_LIGHTS);
+            _setClassVar("DIRECTIONALLIGHT", (void*)(&m_lights.directional), sizeof(DirectionalLight));
+            _setClassVar("SPOTLIGHTS", (void*)(& m_lights.spotLights), sizeof(SpotLight)* NUM_SPOT_LIGHTS);
+                        _setVector4Var("FOGCOLOUR", Engine::Math::Normalize(fogclr));
+            _setFloatVar("FOGSTART", 1000.0f);
+            _setFloatVar("FOGRANGE", 50000.0f);
+            _setFloatVar("DISPLACEMENT", 0.3f);
+
             break;
         case SpriteRenderer:
             _setMatrixVar("WORLDVIEWPROJECTION", worldProj2D);
@@ -420,7 +428,7 @@ void CreateBuffers(const Engine::MeshFilter& mesh, Engine::Camera& camera, const
         attributeFlags.set((size_t)EVertexAttributes::TexCoord);
         attributeFlags.set((size_t)EVertexAttributes::Normal);
         attributeFlags.set((size_t)EVertexAttributes::Tangent);
-        attributeFlags.set((size_t)EVertexAttributes::Binormal);
+        //attributeFlags.set((size_t)EVertexAttributes::Binormal);
     break;
     case SpriteRenderer:
         attributeFlags.set((size_t)EVertexAttributes::Position);
@@ -619,8 +627,8 @@ bool DX11_GFX::Init(Engine::Window& window, Engine::GraphicsMode mode)
 {
 
     //DEBUG TEMP
-    m_lights.directional = { .colour{1, 1, 1, 0.2}, .direction{0.5f, -0.5f, 0.8f} };
-    m_lights.pointLights[0] = { .colour{0.8f, 0.1f, 0.4f, 0.6f}, .position{0.0f, 5.0f, 0.0f}, .radius{65.0f} };
+        m_lights.directional = { .colour{1, 1, 1, 0.8}, .direction{0.0f, -0.5f, 0.0f} };
+        m_lights.pointLights[0] = { .colour{0.8f, 0.1f, 0.4f, 0.6f}, .position{0.0f, 5.0f, 0.0f}, .radius{65.0f} };
     //m_lights.pointLights[1] = { .colour{1.0f, 1.0f, 0.0f, 1.0f}, .position{3.0f, 10.0f, -50.0f}, .radius{85.0f} };
     //m_lights.pointLights[2] = { .colour{1.0f, 0.0f, 1.0f, 1.0f}, .position{15.0f, 30.0f, -40.0f}, .radius{105.0f} };
     //m_lights.pointLights[3] = { .colour{0.0f, 0.0f, 1.0f, 1.0f}, .position{20.0f, 20.0f, -20.0f}, .radius{40.0f} };
@@ -637,6 +645,7 @@ bool DX11_GFX::Init(Engine::Window& window, Engine::GraphicsMode mode)
     CreateDX11Views(m_pDevice, m_pContext, m_pSwapChain, m_pRenderTargetView, m_pDepthStencilView, m_BackBufferDesc, m_Viewport, mode);
 
     window.m_Gfx = this;
+
     return true;
 }
 

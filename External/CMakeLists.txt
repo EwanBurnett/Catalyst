@@ -12,7 +12,7 @@ endif()
 
 
 # Configure dependencies
-set(BUILD_SHARED_LIBS OFF)
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "BUILD_SHARED_LIBS")
 set(FX_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FX11/inc/")
 
 # Build each dependency in turn

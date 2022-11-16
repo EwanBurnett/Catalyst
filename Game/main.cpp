@@ -59,11 +59,18 @@ int WINAPI WinMain(
         {
             time.Tick();
             float dt = time.DeltaTime();
-            Log("dt: %d\n", (int)(1.0f / dt));
             Input::Advance();
 
             static float r = 0;
             r += 1.0f / 120000.0f;
+
+            static float fixedAcc = 0;
+            fixedAcc += dt;
+            while (fixedAcc > (1.0f )) {
+
+                Log("dt: %d\n", (int)(1.0f / dt));
+                fixedAcc -= (1.0f );
+            }
 
             gfx.Clear(sin(r) * 0xD9, cos(r) * 0xAA, 0xAD, 0xFF);
             { 

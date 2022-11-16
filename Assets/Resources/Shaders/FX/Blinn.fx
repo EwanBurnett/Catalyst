@@ -446,7 +446,7 @@ Texture2D DiffuseMap : T_DIFFUSE;
 * Height Texture Map
 * \param T_HEIGHT Semantic bound to this material's Height Map texture
 */
-Texture2D HEIGHT : T_HEIGHT;
+Texture2D HeightMap : T_HEIGHT;
 
 
 /**
@@ -469,9 +469,9 @@ Texture2D NormalMap : T_NORMAL;
 * \param CAMERAPOSITION float3 Semantic for the world position of the camera. 
 */
 cbuffer CBufferPerFrame{
-    DirectionalLight l_DirectionalLight;
-    PointLight l_Points[NUM_POINT_LIGHTS];
-    SpotLight l_SpotLights[NUM_SPOT_LIGHTS];
+    DirectionalLight l_DirectionalLight : DIRECTIONALLIGHT;
+    PointLight l_Points[NUM_POINT_LIGHTS] : POINTLIGHTS;
+    SpotLight l_SpotLights[NUM_SPOT_LIGHTS] : SPOTLIGHTS;
 
     float3 cameraPosition : CAMERAPOSITION;
 }
@@ -542,6 +542,7 @@ struct VS_OUT
     float3 binormal : BINORMAL;
     float3 viewDirection : TEXCOORD1;
     float3 worldPosition : TEXCOORD2;
+    float fog : TEXCOORD3;
 };
 
 // ---------------------------------------------------------------------
@@ -553,12 +554,12 @@ struct VS_OUT
 */
 VS_OUT vs_main(VS_IN input, uniform bool fogEnabled)
 {
-    VS_OUT output;
+    VS_OUT output = (VS_OUT) 0;
 
     //Apply the height map
     if(displacement > 0.0f)
     {
-        float height = heightMap.SampleLevel(AnisotropicSampler, texCoord, 0);
+        float height = HeightMap.SampleLevel(AnisotropicSampler, input.texCoord, 0);
         input.position.xyz += input.normal * height * (displacement - 1);
     }
 
@@ -569,11 +570,11 @@ VS_OUT vs_main(VS_IN input, uniform bool fogEnabled)
     //Due to lights being represented in world space, in order for them to interact with the normals of the object properly, the normal has to be transformed into world space.
     //Transform the normal and tangent into world space, and then compute the Binormal, for use in the pixel shader.
     output.normal = normalize(mul(float4(input.normal, 0), World).xyz); 
-    output.tangent normalize(mul(float4(input.tangent, 0), World).xyz);
+    output.tangent = normalize(mul(float4(input.tangent, 0), World).xyz);
     output.binormal = cross(output.normal, output.tangent);
 
     //Compute the world position of the vertex, for use in the pixel shader. //TODO
-    output.worldPosition = mul((float4(input.position, 1) World).xyz;
+    output.worldPosition = mul(float4(input.position, 1), World).xyz;
     
     //Compute the view direction of the camera to this vertex.
     output.viewDirection = normalize(cameraPosition - output.worldPosition);
@@ -594,9 +595,55 @@ VS_OUT vs_main(VS_IN input, uniform bool fogEnabled)
 /**
 * Pixel Shader for the Blinn effect.
 */
-float4 vs_main(VS_OUT input)
+float4 ps_main(VS_OUT input, uniform bool fogEnabled) : SV_Target
 {
-    return (1.0f, 0.0f, 0.0f, 1.0f);
+    float4 output = (float4) 0;
+
+    //DIFFUSE MAPPING --------------------
+    float4 colour = DiffuseMap.Sample(AnisotropicSampler, input.texCoord);
+
+    //NORMAL MAPPING ------------------------
+    
+    //Sample the normal map, shifting the normal from the range [0..1] to [-1..1]
+    float3 n = (2 * NormalMap.Sample(AnisotropicSampler, input.texCoord).xyz) - 1.0f;
+
+    //Construct the tangent space matrix TBN
+    float3x3 tbn = float3x3(input.tangent, input.binormal, input.normal);
+
+    //Transform the normal into world space
+    n = mul(n, tbn);
+
+    //BLINN SHADING------------------
+    float3 lightDir = normalize(l_DirectionalLight.direction);
+    float3 viewDir = normalize(input.viewDirection);
+
+    //Compute the angle between the normal and the light's direction 
+    float nDotL = dot(n, lightDir);
+    //Compute a half-vector, as we're implementing the Blinn model
+    float3 halfVector = normalize(lightDir + viewDir);
+    //Compute the angle between the normal and the half vector
+    float nDotH = dot(n, halfVector);
+
+    //Compute the lambertian diffuse and blinn-phong specular components using intrinsic functions
+    float4 lightCoefficients = lit(nDotL, nDotH, specularPower);
+
+    float3 ambient = GetVectorColourContribution(ambientColour, colour);
+    float3 diffuse = GetVectorColourContribution(l_DirectionalLight.colour, lightCoefficients.y * colour.rgb);
+    float3 specular = GetScalarColourContribution(specularColour, min(lightCoefficients.z, colour.w));
+
+
+    //PRE-OUTPUT----------------------------
+    output.rgb = ambient + diffuse + specular;
+    output.a = colour.a;
+    
+    //Apply fog with Linear Interpolation.
+    if (fogEnabled)
+    {
+        output.rgb = lerp(output.rgb, fogColour, input.fog);
+    }
+    
+    return output;
+    //return float4(specular, 1);
 }
 
 // ---------------------------------------------------------------------
@@ -606,12 +653,13 @@ technique11 main
 {
     pass p0
     {
-        SetVertexShader(CompileShader(vs_5_0, vs_main()));
+        SetVertexShader(CompileShader(vs_5_0, vs_main(false)));
         SetGeometryShader(NULL);
-        SetPixelShader(CompileShader(ps_5_0, ps_main()));
+        SetPixelShader(CompileShader(ps_5_0, ps_main(false)));
 		
-        SetRasterizerState(DisableCulling);
+        SetRasterizerState(EnableCulling);
+        SetBlendState(EnableAlphaBlending, float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+
     }
 
 }
-*/

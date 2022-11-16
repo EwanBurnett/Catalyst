@@ -50,7 +50,7 @@ float3 GetScalarColourContribution(float4 light, float colour)
     return light.rgb * light.a * colour;
 }
 
-float4 GetLightData(float3 lightPos, float3 worldPos, float lightRadius)
+float4 GetPointLightData(float3 lightPos, float3 worldPos, float lightRadius)
 {
     float4 data;
     float3 lightDir = lightPos - worldPos;
@@ -61,6 +61,7 @@ float4 GetLightData(float3 lightPos, float3 worldPos, float lightRadius)
     return data;
 }
 
+//float4 GetSpotLightData(float3 lightPos, float3 worldPos, )
 float3 GetLightContribution(LightContributionData IN)
 {
     float3 lightDir = IN.lightDirection.xyz;

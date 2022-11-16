@@ -70,7 +70,7 @@ float ComputeFog(float3 viewDir, float start, float range)
 {
     //Fog is modeled as a colour, determined by the 
     //function of the distance from the camera and the start range, and the end range.
-    return saturate((length(viewDirection) - start) / (range));
+    return saturate((length(viewDir) - start) / (range));
 }
 
 #endif
