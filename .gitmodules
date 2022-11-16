@@ -7,3 +7,6 @@
 [submodule "External/DirectXTK"]
 	path = External/DirectXTK
 	url = https://github.com/microsoft/DirectXTK
+[submodule "External/IMGUI"]
+	path = External/IMGUI
+	url = https://github.com/ocornut/imgui

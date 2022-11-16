@@ -1,10 +1,18 @@
 #include "../inc/graphics/Window.h"
 #include "../inc/Graphics/Backends/DX11_GFX.h"
+
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+
 /**
  * \brief Window Procedure used in handling messages for the application. Forwards input and window resizing methods to the appropriate interfaces.
  */
 LRESULT __stdcall WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
+
     switch (msg)
     {
     case WM_DESTROY:
@@ -259,3 +267,12 @@ void Engine::Window::SetIcon(const std::basic_string<wchar_t>& path) const
     SendMessage(m_WindowHandle, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(icoSmall));
     SendMessage(m_WindowHandle, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(icoLarge));
 }
+
+/**
+* \brief Shows or hides the mouse cursor.
+* \param show the state of the mouse cursor
+*/
+void Engine::Window::ShowMouseCursor(const bool show) {
+    ShowCursor(show);
+}
+

@@ -42,6 +42,7 @@ int WINAPI WinMain(
     Camera cam;
     cam.Position = { 0.0f, 0.0f, -2.0f };
 
+    bool bEnableCamera = true;
     Time time;
     time.Reset();
     Input::Init(&time);
@@ -64,21 +65,83 @@ int WINAPI WinMain(
             static float r = 0;
             r += 1.0f / 120000.0f;
 
+            //variable to add deltaTime to
+
             static float fixedAcc = 0;
             fixedAcc += dt;
-            while (fixedAcc > (1.0f )) {
+
+            //Variable that holds how often to update, in seconds
+            float timeStep = (1.0f / 0.5f);
+            while (fixedAcc > (timeStep)) {
 
                 Log("dt: %d\n", (int)(1.0f / dt));
-                fixedAcc -= (1.0f );
+                fixedAcc -= (timeStep);
             }
 
-            gfx.Clear(sin(r) * 0xD9, cos(r) * 0xAA, 0xAD, 0xFF);
-            { 
-                
-                if (Input::Mouse::MouseMoved()) {
-                    auto mouseDelta = Input::Mouse::DeltaPosition();
-                    cam.Look(mouseDelta.x, mouseDelta.y, 100.0f * dt);
+            gfx.Clear();
+            {
+                bool bShowOverlay = true;
+                ImGui::SetNextWindowPos({ 0, 0 });
+                ImGui::Begin("Camera", &bShowOverlay, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNav);
+                ImGui::Checkbox("Enable Camera [Tab]", &bEnableCamera);
+                ImGui::InputFloat3("Position", (float*)&cam.Position);
+                ImGui::End();
+
+                ImGui::Begin("Lights");
+                ImGui::Text("Directional");
+                ImGui::SliderFloat3("Direction", (float*)(&gfx.GetLights().directional.direction), -1.0f, 1.0f);
+                ImGui::ColorEdit4("Colour", (float*)(&gfx.GetLights().directional.colour));
+
+                auto pointLights = gfx.GetLights().pointLights;
+                for (int i = 0; i < NUM_POINT_LIGHTS; i++)
+                {
+                    ImGui::Text("Point Light %d", i);
+                    std::string posLabel = "Position";
+                    posLabel.append(" [");
+                    posLabel.append(std::to_string(i));
+                    posLabel.append("]");
+
+                    std::string colLabel = "Colour";
+                    colLabel.append(" [");
+                    colLabel.append(std::to_string(i));
+                    colLabel.append("]");
+
+                    std::string radLabel = "Radius";
+                    radLabel.append(" [");
+                    radLabel.append(std::to_string(i));
+                    radLabel.append("]");
+
+                    ImGui::SliderFloat3(posLabel.c_str(), ((float*)(&pointLights[i].position)), -1000.0f, 1000.0f);
+                    ImGui::ColorEdit4(colLabel.c_str(), (float*)(&gfx.GetLights().pointLights[i].colour));
+                    ImGui::SliderFloat(radLabel.c_str(), &gfx.GetLights().pointLights[i].radius, 0.0f, 1000.0f);
                 }
+
+                ImGui::End();
+
+                ImGui::Begin("Materials");
+                for (auto renderer : model.renderers) {
+                    Engine::Blinn* b = (Engine::Blinn*)renderer.material;
+
+                    ImGui::Text("Renderers");
+                   
+                }
+
+                ImGui::End();
+            }
+
+            //Input
+            {
+                if (bEnableCamera) {
+                    if (Input::Mouse::MouseMoved()) {
+                        auto mouseDelta = Input::Mouse::DeltaPosition();
+                            cam.Look(mouseDelta.x, mouseDelta.y, 100.0f * dt);
+                    }
+                }
+                if (Input::Keyboard::KeyPressed(Input::Keys::KB_KEY_TAB)) {
+                    bEnableCamera = !bEnableCamera;
+                    window.ShowMouseCursor(!bEnableCamera);
+                }
+
                 Engine::Vector3f dir = { 0.0f, 0.0f, 0.0f };
                 if (Input::Keyboard::KeyDown(Input::Keys::KB_KEY_W))
                 {

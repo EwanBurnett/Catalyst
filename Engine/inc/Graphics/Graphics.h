@@ -29,6 +29,7 @@ namespace Engine
         virtual void Draw(Matrix4x4& worldMatrix, const Sprite& sprite, Camera& camera) = 0;
         virtual void Clear(uint8_t r = 0x00, uint8_t g = 0x00, uint8_t b = 0x00, uint8_t a = 0x00) = 0;
         virtual void Present() = 0;
+        virtual Lights& GetLights() = 0;
 
         virtual void SetGraphicsMode(const Window& window, GraphicsMode mode = {}) = 0;
 

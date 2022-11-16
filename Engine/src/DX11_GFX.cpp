@@ -626,13 +626,9 @@ void SetPrimitiveTopology(const Engine::MeshRenderer renderer,const Microsoft::W
 bool DX11_GFX::Init(Engine::Window& window, Engine::GraphicsMode mode)
 {
 
-    //DEBUG TEMP
-        m_lights.directional = { .colour{1, 1, 1, 0.8}, .direction{0.0f, -0.5f, 0.0f} };
-        m_lights.pointLights[0] = { .colour{0.8f, 0.1f, 0.4f, 0.6f}, .position{0.0f, 5.0f, 0.0f}, .radius{65.0f} };
-    //m_lights.pointLights[1] = { .colour{1.0f, 1.0f, 0.0f, 1.0f}, .position{3.0f, 10.0f, -50.0f}, .radius{85.0f} };
-    //m_lights.pointLights[2] = { .colour{1.0f, 0.0f, 1.0f, 1.0f}, .position{15.0f, 30.0f, -40.0f}, .radius{105.0f} };
-    //m_lights.pointLights[3] = { .colour{0.0f, 0.0f, 1.0f, 1.0f}, .position{20.0f, 20.0f, -20.0f}, .radius{40.0f} };
-
+    //Init Light
+    m_lights.directional.direction = { 0, -1, 0 };
+    m_lights.directional.colour = { 1, 1, 1, 1 };
     
     //Validate the window handle
     ERR(window.m_WindowHandle == nullptr, "Window Handle is invalid!");
@@ -646,6 +642,18 @@ bool DX11_GFX::Init(Engine::Window& window, Engine::GraphicsMode mode)
 
     window.m_Gfx = this;
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO(); 
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplWin32_Init(window.m_WindowHandle);
+    ImGui_ImplDX11_Init(m_pDevice.Get(), m_pContext.Get());
+
     return true;
 }
 
@@ -657,6 +665,14 @@ void DX11_GFX::Clear(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     const float clr[4] = { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, (float)a / 255.0f };
     m_pContext->ClearRenderTargetView(m_pRenderTargetView.Get(), clr);
     m_pContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    bool demo = false;
+    if (demo)
+        ImGui::ShowDemoWindow(&demo);
 }
 
 /**
@@ -664,6 +680,9 @@ void DX11_GFX::Clear(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
  */
 void DX11_GFX::Present()
 {
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
     m_pSwapChain->Present(0, 0);
 }
 
@@ -677,6 +696,12 @@ void DX11_GFX::SetGraphicsMode(const Window& window, GraphicsMode mode)
     m_pSwapChain->SetFullscreenState(mode.isFullscreen, nullptr);
 
     m_gMode = mode;
+}
+
+Lights& Engine::DX11_GFX::GetLights()
+{
+    // TODO: insert return statement here
+    return m_lights;
 }
 
 /**

@@ -20,5 +20,17 @@ add_subdirectory(ASSIMP)
 add_subdirectory(FX11)
 add_subdirectory(DirectXTK)
 
+set(IMGUI_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/" CACHE INTERNAL "IMGUI_INCLUDE_DIR")
+file(GLOB_RECURSE IMGUI_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/*.cpp")
 
+set(IMGUI_SOURCES 
+	"${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/imgui.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/imgui_demo.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/imgui_draw.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/imgui_widgets.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/imgui_tables.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/backends/imgui_impl_win32.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/IMGUI/backends/imgui_impl_dx11.cpp"
+
+	CACHE INTERNAL "IMGUI_SOURCES")
 

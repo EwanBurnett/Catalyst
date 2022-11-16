@@ -15,6 +15,10 @@
 
 #include <bitset>
 
+#include <imgui.h>
+#include <backends/imgui_impl_win32.h>
+#include <backends/imgui_impl_dx11.h>
+
 namespace Engine
 {
  class DX11_GFX : public Graphics
@@ -29,7 +33,8 @@ namespace Engine
      void Clear(uint8_t r = 0x00, uint8_t g = 0x00, uint8_t b = 0x00, uint8_t a = 0x00) override;
      void Present() override;
      void SetGraphicsMode(const Window& window, GraphicsMode mode) override;
-    
+     Lights& GetLights() override;
+
  private:
      
      Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;

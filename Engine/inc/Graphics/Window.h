@@ -42,9 +42,11 @@ namespace Engine {
         void SetTitle(const std::basic_string<char>& title) const;
         void SetVideoMode(const VideoMode mode = {}) const;
         void SetIcon(const std::basic_string<wchar_t>& path) const;
+        void ShowMouseCursor(const bool show);
 
     private:
         HWND m_WindowHandle = nullptr;
         Graphics* m_Gfx = nullptr;
+        bool bShowCursor = true;
     };
 }
