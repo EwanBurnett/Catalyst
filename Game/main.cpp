@@ -32,12 +32,15 @@ int WINAPI WinMain(
 
     Model model;
     Importer::LoadFromFile(model, "Resources\\Sponza.Asset");
+    
+    Model dragon;
+    Importer::LoadFromFile(dragon, "Resources\\Stanford-Dragon.Asset");
 
     MeshRenderer renderer;
     renderer.material = b;
     renderer.shader = EShaderType::Blinn;
 
-    model.renderers.push_back(renderer);
+    //model.renderers.push_back(renderer);
 
     Camera cam;
     cam.Position = { 0.0f, 0.0f, -2.0f };
@@ -82,9 +85,11 @@ int WINAPI WinMain(
             {
                 bool bShowOverlay = true;
                 ImGui::SetNextWindowPos({ 0, 0 });
-                ImGui::Begin("Camera", &bShowOverlay, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNav);
+                ImGui::Begin("Status", &bShowOverlay, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNav);
+                ImGui::Text("Frame Rate: %dfps", (int)(1.0f / dt));
                 ImGui::Checkbox("Enable Camera [Tab]", &bEnableCamera);
                 ImGui::InputFloat3("Position", (float*)&cam.Position);
+                ImGui::InputFloat3("Direction", (float*)&cam.Forward);
                 ImGui::End();
 
                 ImGui::Begin("Lights");
@@ -111,9 +116,9 @@ int WINAPI WinMain(
                     radLabel.append(std::to_string(i));
                     radLabel.append("]");
 
-                    ImGui::SliderFloat3(posLabel.c_str(), ((float*)(&pointLights[i].position)), -1000.0f, 1000.0f);
+                    ImGui::SliderFloat3(posLabel.c_str(), ((float*)(&pointLights[i].position)), -300.0f, 300.0f);
                     ImGui::ColorEdit4(colLabel.c_str(), (float*)(&gfx.GetLights().pointLights[i].colour));
-                    ImGui::SliderFloat(radLabel.c_str(), &gfx.GetLights().pointLights[i].radius, 0.0f, 1000.0f);
+                    ImGui::SliderFloat(radLabel.c_str(), &gfx.GetLights().pointLights[i].radius, 0.0f, 50.0f);
                 }
 
                 ImGui::End();
@@ -175,9 +180,13 @@ int WINAPI WinMain(
             {
                 PostQuitMessage(0x04);
             }
+            for (auto i = 0; i < dragon.meshes.size(); i++) {
+                gfx.Draw(dragon.worldMatrix, dragon.meshes.at(i), dragon.renderers.at(i), cam);
+            }
             for (auto i = 0; i < model.meshes.size(); i++) {
                 gfx.Draw(model.worldMatrix, model.meshes.at(i), model.renderers.at(i), cam);
             }
+
             gfx.Present();
         }
     }

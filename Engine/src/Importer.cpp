@@ -533,7 +533,7 @@ Engine::Model LoadModelAsset(std::basic_string<char> filePath)
                 //texNameLength = ReadData<uint64_t>(inFile, sizeof(uint64_t), offset);
                 wstrBuf.resize(ReadData<uint64_t>(inFile, sizeof(uint64_t), offset));
                 ReadData<wchar_t>(inFile, wstrBuf.size() * 2, offset, (uintptr_t)wstrBuf.data());
-                mat->NormalMap = wstrBuf;
+                mat->SpecularMap = wstrBuf;
 
                 m.renderers[renderer].material = mat;
             }

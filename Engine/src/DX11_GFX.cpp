@@ -337,7 +337,7 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
                 ieDesc.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
                 ieDesc.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
                 ieDesc.push_back({ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
-                //ieDesc.push_back({ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+                ieDesc.push_back({ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
                 break;
             case SpriteRenderer:
                 ieDesc.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
@@ -378,7 +378,7 @@ void SetShaderState(const Microsoft::WRL::ComPtr<ID3DX11Effect>& shader, const E
             _setVector4Var("AMBIENT", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Ambient));
             _setVector4Var("DIFFUSE", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Diffuse));
             _setVector4Var("SPECULAR", Engine::Math::Normalize(((Engine::Blinn*)renderer.material)->Specular));
-            _setFloatVar("SPECULARPOWER", ((Engine::Blinn*)renderer.material)->SpecularPower);
+            _setFloatVar("SPECULARPOWER", (float)((Engine::Blinn*)renderer.material)->SpecularPower);
             _setVector3Var("CAMERAPOSITION", camera.Position);
             _setTextureVar("T_DIFFUSE", ((Engine::Blinn*)renderer.material)->DiffuseMap);
             _setTextureVar("T_NORMAL", ((Engine::Blinn*)renderer.material)->NormalMap);
@@ -428,7 +428,7 @@ void CreateBuffers(const Engine::MeshFilter& mesh, Engine::Camera& camera, const
         attributeFlags.set((size_t)EVertexAttributes::TexCoord);
         attributeFlags.set((size_t)EVertexAttributes::Normal);
         attributeFlags.set((size_t)EVertexAttributes::Tangent);
-        //attributeFlags.set((size_t)EVertexAttributes::Binormal);
+        attributeFlags.set((size_t)EVertexAttributes::Binormal);
     break;
     case SpriteRenderer:
         attributeFlags.set((size_t)EVertexAttributes::Position);
@@ -628,7 +628,7 @@ bool DX11_GFX::Init(Engine::Window& window, Engine::GraphicsMode mode)
 
     //Init Light
     m_lights.directional.direction = { 0, -1, 0 };
-    m_lights.directional.colour = { 1, 1, 1, 1 };
+    m_lights.directional.colour = { 1, 1, 1, 0.3 };
     
     //Validate the window handle
     ERR(window.m_WindowHandle == nullptr, "Window Handle is invalid!");

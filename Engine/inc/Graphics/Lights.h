@@ -1,8 +1,8 @@
 #pragma once
 #include "../Core/Types.h"
 
-#define NUM_POINT_LIGHTS 8
-#define NUM_SPOT_LIGHTS 8
+#define NUM_POINT_LIGHTS 4
+#define NUM_SPOT_LIGHTS 4
 
 namespace Engine {
     struct Light {};

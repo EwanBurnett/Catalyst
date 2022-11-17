@@ -1,8 +1,8 @@
 #ifndef _LIGHTHELPER_FXH
 #define _LIGHTHELPER_FXH
 
-#define NUM_POINT_LIGHTS 16
-#define NUM_SPOT_LIGHTS 16
+#define NUM_POINT_LIGHTS 4
+#define NUM_SPOT_LIGHTS 4
 
 struct DirectionalLight
 {
@@ -69,6 +69,19 @@ float3 GetLightContribution(LightContributionData IN)
     float3 halfVector = normalize(lightDir + IN.viewDirection);
     float nDotH = dot(IN.normal, halfVector);
     
+    //Compute the angle between the normal and the light's direction 
+    //float nDotL = dot(n, lightDir);
+    //Compute a half-vector, as we're implementing the Blinn model
+    
+    //Compute the angle between the normal and the half vector
+    //float nDotH = dot(n, halfVector);
+
+    //Compute the lambertian diffuse and blinn-phong specular components using intrinsic functions
+    //lit() returns the lighting coefficient vector:
+    //(ambient, diffuse, specular, 1)
+    //ambient = 1
+    //diffuse = (n.l > 0) ? 0 : n.l
+    //specular = ((n.l < 0) || (n.h < 0)) ? 0 : (n.h) ^ m
     float4 lightCoefficients = lit(nDotL, nDotH, IN.specularPower);
     
     float3 diffuse = GetVectorColourContribution(IN.lightColour, lightCoefficients.y * IN.colour.rgb) * IN.lightDirection.w;
@@ -78,4 +91,47 @@ float3 GetLightContribution(LightContributionData IN)
 
 }
 
+float3 ComputeSpecular(float4 specularColour, float3 lightDirection, float3 viewDirection, float3 normal, float specularPower, float specularIntensity, float lightIntensity)
+{
+    float3 lightDir = normalize(lightDirection);
+    float3 viewDir = normalize(viewDirection);
+    float nDotL = dot(normal, lightDir);
+    float3 halfVector = normalize(lightDir + viewDir);  
+    float nDotH = dot(normal, halfVector);
+
+    //Compute the angle between the normal and the light's direction 
+    //float nDotL = dot(n, lightDir);
+    //Compute a half-vector, as we're implementing the Blinn model
+    
+    //Compute the angle between the normal and the half vector
+    //float nDotH = dot(n, halfVector);
+
+    //Compute the lambertian diffuse and blinn-phong specular components using intrinsic functions
+    //lit() returns the lighting coefficient vector:
+    //(ambient, diffuse, specular, 1)
+    //ambient = 1
+    //diffuse = (n.l > 0) ? 0 : n.l
+    //specular = ((n.l < 0) || (n.h < 0)) ? 0 : (n.h) ^ m
+    float3 lightCoefficients = lit(nDotL, nDotH, specularPower);
+
+    return (specularColour.rgb * specularColour.a * min(lightCoefficients.z, specularIntensity) * lightIntensity);
+}
+
+float3 ComputeDiffuse(float4 diffuseColour, float3 lightDirection, float3 viewDirection, float3 normal, float4 lightColour, float specularPower)
+{
+    float3 lightDir = normalize(lightDirection);
+    float3 viewDir = normalize(viewDirection);
+    float nDotL = dot(normal, lightDir);
+    float3 halfVector = normalize(lightDir + viewDir);
+    float nDotH = dot(normal, halfVector);
+
+    float3 lightCoefficients = lit(nDotL, nDotH, specularPower);
+    
+    return(lightColour.rgb * lightColour.a * lightCoefficients.y * diffuseColour.rgb);
+}
+
+float3 ComputeAmbient(float4 ambientColour, float3 diffuseColour)
+{
+    return(ambientColour.rgb * ambientColour.a * diffuseColour);
+}
 #endif
